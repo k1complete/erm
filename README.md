@@ -15,10 +15,10 @@ Erlang like record manipulator
         ## --> {:foo, _, _} = m
         Erm.recordl(:foo, [field2: 3]) = m 
         ## --> {:foo, _, 3} = m
-	Erm.record_info(:fields, :foo)
-	## --> [:field1, :field2]
-	Erm.record_info(:size, :foo)
-	## --> 3   ## length([:foo, :field1, :field2])
+        Erm.record_info(:fields, :foo)
+        ## --> [:field1, :field2]
+        Erm.record_info(:size, :foo)
+        ## --> 3   ## length([:foo, :field1, :field2])
       end
     end
     defmodule M2
