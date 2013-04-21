@@ -7,7 +7,16 @@ defmodule Erm.Util do
 			   end end)
   end
   def merge(plist, opt) do
-    check(Keyword.keys(plist), Keyword.keys(opt))
-    Keyword.merge(plist, opt, fn(_k, _v1, v2) -> v2 end)
+    case plist do
+      [] -> 
+	case opt do
+	  [] -> []
+	  _ -> raise MatchError, key: opt
+	end
+      _ ->
+	check(Keyword.keys(plist), Keyword.keys(opt))
+	r = Keyword.merge(plist, opt, fn(_k, _v1, v2) -> v2 end)
+	r
+    end
   end
 end

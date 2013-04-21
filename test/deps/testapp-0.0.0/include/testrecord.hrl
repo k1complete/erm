@@ -1,0 +1,1 @@
+-record(test_record, {a, b}).

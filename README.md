@@ -1,6 +1,11 @@
 # Erm
 Erlang like record manipulator
 
+- no overhead convert to erlang record tuple.
+- bulk convert *.hrl (and automatic resolving library path)
+- search path management and available wildcard(use Erm.addpath("***"))
+- available left hand for pattern matching(use Erm.recordl(:foo))
+
 ## usage
 
     defmodule M1

@@ -16,10 +16,14 @@ defmodule Erm do
   """
   def addpath(path) do
     m = Mix.project
-    [k] = Keyword.keys(m[:deps])
-    dp = m[:deps_path]
-    :io.format("Erm: include paths ~p~n", [path])
-    pj = Path.wildcard(Path.join([dp, atom_to_binary(k), path]))
+    case Keyword.keys(m[:deps]) do
+      [k] -> 
+	dp = m[:deps_path]
+	:io.format("Erm: include paths ~p~n", [path])
+	pj = Path.wildcard(Path.join([dp, atom_to_binary(k), path]))
+      _ -> 
+	pj = Path.wildcard(path)
+    end
     filepaths = Enum.map(pj, fn(x) -> 
 				 binary_to_list(Path.dirname(x)) 
 			     end)
@@ -35,10 +39,12 @@ defmodule Erm do
     :ets.delete(:erec_records)
   end
   defp getdefs(rs, name) do
+#    :io.format("getdefs ~s~n", [name])
     try do
       [{^name, _recdef}]  = :ets.lookup(rs, name)
     rescue 
-      MatchError -> raise MatchError, [actual: name]
+      MatchError ->
+	raise MatchError, [actual: name]
     end
   end
   defp get_record_fields(rs, name) do
@@ -47,12 +53,18 @@ defmodule Erm do
   end
   defp erec(rs, name, keylist) do
     [{^name, recdef}]  = getdefs(rs, name)
-    fields = Erm.Util.merge(recdef, keylist)
-    [name | Keyword.values(fields)]
+    case recdef do
+      [] -> 
+	[name]
+      _ ->
+	fields = Erm.Util.merge(recdef, keylist)
+	ret = [name | Keyword.values(fields)]
+	ret
+    end
   end
   defp conv(rs, {:record, _n, name, fields}) do
     key_values = reduce_fields(rs, fields)
-    list_to_tuple(erec(rs, name, key_values))
+    {:"{}", [], erec(rs, name, key_values)}
   end
   defp conv(_rs, {:integer, _n, v}) do
     v
@@ -67,13 +79,17 @@ defmodule Erm do
   defp conv(_rs, {:atom, _n, a}) do
     a
   end
+  defp conv(_rs, {:function, f, a}) do
+    [:erlang, f, a]
+  end
+  defp conv(_rs, {:function, m, f, a}) do
+    [conv(_rs, m), conv(_rs, f), conv(_rs, a)]
+  end
   defp conv(_rs, {:fun, _n, fp}) do
-    {:function, {:atom, _, module}, {:atom, _, f}, {:integer, _, arity}} = fp
-    :io.format("function ~p:~p/~p~n", [module, f, arity])
+    [module, f, arity] = conv(_rs, fp)
     {:function, [import: Kernel], [module, f, arity]}
   end
   defp conv(_rs, {:cons, _n,a,b}) do
-#    :io.format("cons ~p ~p~n", [a, b])
     [conv(_rs, a) | conv(_rs, b)]
   end
   defp conv(rs, {:call, _n, mf,args}) do
@@ -85,6 +101,9 @@ defmodule Erm do
   end
   defp conv(_rs, {_type, _n, v}) do
     v
+  end
+  defp conv(_rs, {:eof, _n}) do
+    nil
   end
   defp reduce_fields(rs, defs) do
     m = Enum.map(defs, function do
@@ -102,7 +121,16 @@ defmodule Erm do
       :undefined -> init()
       _ -> true
     end
-#    :io.format("record ~p~n", [elem(rdef, 0)])
+    {name, fields} = rdef
+    c = List.foldl(fields, [], fn({k, v}, a) -> 
+				   Keyword.put(a, k, v) 
+			       end)
+    case (fields -- c) do
+      [] -> true
+      m ->
+	msg = list_to_binary(:io_lib.format("duplicate field names ~p in record ~s~n", [m, name]))
+	raise ArgumentError, message: msg
+    end
     true = :ets.insert(rs, rdef)
   end
   @doc "record definition from file"
