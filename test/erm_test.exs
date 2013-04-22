@@ -1,7 +1,16 @@
 Code.require_file "../test_helper.exs", __FILE__
+defmodule MM do
+  Record.defmacros :"p_m", [a: 1, b: 1, c: 1], __ENV__, :"P.u"
+  use ExUnit.Case
+  test "test" do
+    assert(p_m() == {:"P.u",1, 1, 1})
+    assert(p_m(a: 2) = {:"P.u", 2, 1, 1})
+  end
+end
 defmodule ErmBadTest do
   use ExUnit.Case
   use Erm
+  :code.del_path(:testapp)
   test "Erm.defmacro" do
     assert_raise(KeyError, 
 		   fn() ->
@@ -16,8 +25,15 @@ defmodule ErmBadTest do
 			 Erm.defrecord(:a, [a1: 1, a1: 2])
 		       end
 		   end)
+    assert_raise(File.Error,
+		   fn() ->
+		       defmodule MFileError do
+			 Erm.defrecords_from_hrl("test/include_hrl.hrl")
+		       end
+		   end)
   end
 end
+if nil do
 defmodule ErmTest do
   use ExUnit.Case
   use Erm
@@ -72,4 +88,5 @@ defmodule ErmTest do
     assert(Erm.record(:"include_hrl3") == {:include_hrl3, :undefined, :undefined, :undefined})
   end
   
+end
 end

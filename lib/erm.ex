@@ -145,6 +145,10 @@ defmodule Erm do
       Enum.filter_map(r, function do
 			 ({:attribute, _n, :record, _d}) ->
 			   true
+			 ({:error, {_n, :epp, {path}}}) ->
+			   raise File.Error, reason: :enoent, 
+					action: " maybe not search path", 
+					path: path
 			 (_) -> 
 			   false
 		       end,
