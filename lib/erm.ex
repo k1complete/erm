@@ -1,7 +1,12 @@
 defmodule Erm do
   @moduledoc "Erlang like Record Manipulater module"
-  def __using__(_opts) do
-
+  defmacro __using__(_opts) do
+    r = :ets.info(:erec_records)
+    unless (r == :undefined) do
+      :error_logger.info_msg("delete table ~p", [r])
+      delete()
+    end
+    init()
   end
   @doc """
   add erlang record definition search path available * and ** 
@@ -32,7 +37,7 @@ defmodule Erm do
   end
   @doc "open named ets table, :erec_records"
   def init() do
-    :ets.new(:erec_records, [:named_table])
+    :ets.new(:erec_records, [:named_table, :public])
   end
   @doc "delete ets table :erec_records"
   def delete() do
