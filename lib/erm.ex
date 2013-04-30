@@ -3,7 +3,6 @@ defmodule Erm do
   defmacro __using__(_opts) do
     r = :ets.info(:erec_records)
     unless (r == :undefined) do
-      :error_logger.info_msg("delete table ~p", [r])
       delete()
     end
     init()
@@ -24,7 +23,7 @@ defmodule Erm do
     case Keyword.keys(m[:deps]) do
       [k] -> 
 	dp = m[:deps_path]
-	:io.format("Erm: include paths ~p~n", [path])
+	:error_logger.info_msg("Erm: include paths ~p~n", [path])
 	pj = Path.wildcard(Path.join([dp, atom_to_binary(k), path]))
       _ -> 
 	pj = Path.wildcard(path)
@@ -32,7 +31,7 @@ defmodule Erm do
     filepaths = Enum.map(pj, fn(x) -> 
 				 binary_to_list(Path.dirname(x)) 
 			     end)
-    :io.format("Erm: add include paths ~p~n", [filepaths])
+    :error_logger.info_msg("Erm: add include paths ~p~n", [filepaths])
     Enum.each(filepaths, fn(x) -> :code.add_patha(x) end)
   end
   @doc "open named ets table, :erec_records"
@@ -44,7 +43,6 @@ defmodule Erm do
     :ets.delete(:erec_records)
   end
   defp getdefs(rs, name) do
-#    :io.format("getdefs ~s~n", [name])
     try do
       [{^name, _recdef}]  = :ets.lookup(rs, name)
     rescue 
@@ -146,7 +144,6 @@ defmodule Erm do
     try do
       [filepath | _ ] = Path.wildcard(file)
       {:ok, r} = :epp.parse_file binary_to_list(filepath), pathlist, opt
-#      :io.format("parsed: ~p~n", [r])
       Enum.filter_map(r, function do
 			 ({:attribute, _n, :record, _d}) ->
 			   true
