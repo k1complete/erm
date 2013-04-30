@@ -1,7 +1,10 @@
 defmodule Erm do
   @moduledoc "Erlang like Record Manipulater module"
+  defp pid do
+    list_to_atom(pid_to_list(self))
+  end
   defmacro __using__(_opts) do
-    r = :ets.info(:erec_records)
+    r = :ets.info(pid())
     unless (r == :undefined) do
       delete()
     end
@@ -36,11 +39,11 @@ defmodule Erm do
   end
   @doc "open named ets table, :erec_records"
   def init() do
-    :ets.new(:erec_records, [:named_table, :public])
+    :ets.new(pid(), [:named_table])
   end
   @doc "delete ets table :erec_records"
   def delete() do
-    :ets.delete(:erec_records)
+    :ets.delete(pid())
   end
   defp getdefs(rs, name) do
     try do
@@ -156,8 +159,8 @@ defmodule Erm do
 		       end,
 		      function do
 			({_a, _n, :record, {name, defs}}) ->
-			  m = reduce_fields(:erec_records, defs)
-			  record_definition(:erec_records, {name, m})
+			  m = reduce_fields(pid(), defs)
+			  record_definition(pid(), {name, m})
 		      end)
     rescue
       MatchError -> 
@@ -175,14 +178,14 @@ defmodule Erm do
     defrecords_from_file(file, paths, opt)
   end
   defmacro defrecord(name, datas) do
-    record_definition(:erec_records, {name, datas})
+    record_definition(pid(), {name, datas})
   end
   defmacro record(name, keylist // []) do
-    ret = erec(:erec_records, name, keylist)
+    ret = erec(pid(), name, keylist)
     {:"{}", [], ret}
   end
   defmacro record(name, tuple, keylist) do
-    keys = get_record_fields(:erec_records, name)
+    keys = get_record_fields(pid(), name)
     opts = Keyword.keys(keylist)
     Erm.Util.check(keys, opts)
     quote do
@@ -194,16 +197,16 @@ defmodule Erm do
     end
   end
   defmacro recordl(name, keylist // []) do
-    [{^name, recdef}]  = getdefs(:erec_records, name)
+    [{^name, recdef}]  = getdefs(pid(), name)
     recdef = Enum.map(recdef, fn({k, _v}) -> {k, {:_, [], Elixir}} end)
     fields = Erm.Util.merge(recdef, keylist)
     ret = [name | Keyword.values(fields)]
     {:"{}", [], ret}
   end
   defmacro record_info(:fields, name) when is_atom(name) do
-    get_record_fields(:erec_records, name)
+    get_record_fields(pid(), name)
   end
   defmacro record_info(:size, name) when is_atom(name) do
-    length(get_record_fields(:erec_records, name)) + 1
+    length(get_record_fields(pid(), name)) + 1
   end
 end
