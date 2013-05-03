@@ -174,8 +174,17 @@ defmodule Erm do
   defmacro defrecords_from_hrl(file) do
     defrecords_from_file(file, [], [])
   end
-  def defrecords_from_hrl(file, paths, opt //[]) do
-    defrecords_from_file(file, paths, opt)
+  @doc "all record defining from 'app/include/*.hrl'"
+  @spec defrecords_from_lib(file :: String) :: nil
+  defmacro defrecords_from_lib(file) do
+    [libname | rest] = Path.split(file)
+    case :code.lib_dir(binary_to_atom(libname)) do
+      {:error, :bad_name} ->
+	raise ArgumentError, message: "Bad name #{libname}"
+      m when(is_list(m)) -> 
+	r = [list_to_binary(m) | rest]
+	defrecords_from_file(Path.join(r), [], [])
+    end
   end
   defmacro defrecord(name, datas) do
     record_definition(pid(), {name, datas})

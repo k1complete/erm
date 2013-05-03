@@ -32,3 +32,8 @@ Erlang like record manipulator
       Erm.defrecord_from_hrl("path/to/**/*hrl")
       ## bulk record definition
     end
+    defmodule M3
+      use Erm
+      Erm.defrecord_from_lib("edoc/include/edoc_doclet.hrl")
+      ## bulk record definition
+    end
