@@ -12,15 +12,18 @@ defmodule Erm do
   end
   @doc """
   add erlang record definition search path available * and ** 
+  
   usage: use into defmodule block  ... 
-  defmodule foo do
-    use Erm
-    def f1() do
-      Erm.record(:rec1) ....
-      ...
-    end
-  end
+
+      defmodule foo do
+        use Erm
+        def f1() do
+          Erm.record(:rec1) ....
+          ...
+        end
+      end
   """
+  @spec addpath(path :: binary) :: nil
   def addpath(path) do
     m = Mix.project
     case Keyword.keys(m[:deps]) do
@@ -37,11 +40,11 @@ defmodule Erm do
     :error_logger.info_msg("Erm: add include paths ~p~n", [filepaths])
     Enum.each(filepaths, fn(x) -> :code.add_patha(x) end)
   end
-  @doc "open named ets table, :erec_records"
+  @doc "open named ets table"
   def init() do
     :ets.new(pid(), [:named_table])
   end
-  @doc "delete ets table :erec_records"
+  @doc "delete ets table"
   def delete() do
     :ets.delete(pid())
   end
@@ -122,7 +125,7 @@ defmodule Erm do
 		       end)
     m
   end
-  def record_definition(rs, rdef) do
+  defp record_definition(rs, rdef) do
     case :ets.info(rs) do
       :undefined -> init()
       _ -> true
@@ -174,7 +177,13 @@ defmodule Erm do
   defmacro defrecords_from_hrl(file) do
     defrecords_from_file(file, [], [])
   end
-  @doc "all record defining from 'app/include/*.hrl'"
+  @doc """
+  all record defining from 'app/include/*.hrl'
+
+  app is OTP application name without version
+
+      Erm.defrecords_from_lib("edoc/include/edoc_doclet.hrl")
+  """
   @spec defrecords_from_lib(file :: String) :: nil
   defmacro defrecords_from_lib(file) do
     [libname | rest] = Path.split(file)
@@ -186,17 +195,41 @@ defmodule Erm do
 	defrecords_from_file(Path.join(r), [], [])
     end
   end
+
+  @doc """
+  define erlang record
+
+      Erm.defrecord(:record1, [field1: default1, field2: default2])
+      r1 = Erm.defrecod(:record1)
+      ==> r1 = {:record1, default1, default2}
+
+  """
   defmacro defrecord(name, datas) do
     record_definition(pid(), {name, datas})
   end
+
+  @doc """
+  reference erlang record
+
+      r1 = Erm.record(:record1, [field2: value4])
+      ==> r1 = {:record1, default1, value4}
+  """
   defmacro record(name, keylist // []) do
     ret = erec(pid(), name, keylist)
     {:"{}", [], ret}
   end
+  @doc """
+  reference erlang record
+
+      r1 = Erm.record(:record1) 
+      ==> r1 = {:record1, default1, default2}
+      r2 = Erm.record(:record1, r1, [field1: value3, field2: value4])
+      ==> r2 = {:record1, value3, value4}
+  """
   defmacro record(name, tuple, keylist) do
     keys = get_record_fields(pid(), name)
     opts = Keyword.keys(keylist)
-    Erm.Util.check(keys, opts)
+    Erm.Util.assert_qual(keys, opts)
     quote do
       [_ | fields] = tuple_to_list(unquote(tuple))
       e = Enum.zip(unquote(keys), fields)
@@ -205,6 +238,20 @@ defmodule Erm do
       list_to_tuple [unquote(name) | Keyword.values(merged_kv)]
     end
   end
+  @doc """
+  reference erlang record for lvalue using by pattern matching
+  
+      recordl(:record1) = record1_return_func()
+      ==> {:record1, _, _} = record1_return_func()
+
+      def f1(recordl(:record1, [field2: m])) do
+        :io.format("~p", [m])
+      end
+      ==>
+      def f1({:record1, _, m}) do
+        :io.format("~p", [m])
+      end
+  """
   defmacro recordl(name, keylist // []) do
     [{^name, recdef}]  = getdefs(pid(), name)
     recdef = Enum.map(recdef, fn({k, _v}) -> {k, {:_, [], Elixir}} end)
@@ -212,6 +259,17 @@ defmodule Erm do
     ret = [name | Keyword.values(fields)]
     {:"{}", [], ret}
   end
+  @doc """
+  return field list or tuple size for erlang record
+
+      Erm.defrecord(:record1, [field1: nil, field2: nil])
+      Erm.record_info(:fields, :record1)
+      => [:field1, :field2]
+
+      Erm.defrecord(:record1, [field1: nil, field2: nil])
+      Erm.record_info(:size, :record1)
+      => 3
+  """
   defmacro record_info(:fields, name) when is_atom(name) do
     get_record_fields(pid(), name)
   end
