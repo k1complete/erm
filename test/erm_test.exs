@@ -32,6 +32,21 @@ defmodule ErmBadTest do
 		       end
 		   end)
   end
+  test "dynamic record reference" do
+    Erm.defrecord(:r1, [f1: 1, f2: 2, f3: 3])
+    opt = [f1: 2, f3: 4]
+    m = Erm.record(:r1)
+    assert({:r1, 2, 2, 4} == Erm.record(:r1, m, opt))
+    assert(Erm.record(:r1, [f1: 2, f3: 4]) == Erm.record(:r1, m, opt))
+    assert_raise(ArgumentError,
+		   fn() ->
+		       defmodule Dmodule do
+			 def f() do
+			   Erm.record(:r1, opt) == Erm.record(:r1, m, opt)
+			 end
+		       end
+		   end)
+  end
 end
 if nil do
 defmodule ErmTest do
@@ -87,6 +102,5 @@ defmodule ErmTest do
     assert(Erm.record(:"include_hrl1") == {:include_hrl1, :undefined, :undefined})
     assert(Erm.record(:"include_hrl3") == {:include_hrl3, :undefined, :undefined, :undefined})
   end
-  
 end
 end

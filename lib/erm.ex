@@ -228,8 +228,10 @@ defmodule Erm do
   """
   defmacro record(name, tuple, keylist) do
     keys = get_record_fields(pid(), name)
-    opts = Keyword.keys(keylist)
-    Erm.Util.assert_qual(keys, opts)
+    if (Keyword.keyword?(keylist)) do
+	  opts = Keyword.keys(keylist)
+	  Erm.Util.fields_match(keys, opts)
+    end
     quote do
       [_ | fields] = tuple_to_list(unquote(tuple))
       e = Enum.zip(unquote(keys), fields)
