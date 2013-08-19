@@ -26,11 +26,11 @@ defmodule ErmBadTest do
 		       end
 		   end)
     assert_raise(File.Error,
-		   fn() ->
-		       defmodule MFileError do
-			 Erm.defrecords_from_hrl("test/include_hrl.hrl")
-		       end
-		   end)
+		                    fn() ->
+		                        defmodule MFileError do
+			                        Erm.defrecords_from_hrl("test/include_hrl.hrl")
+		                        end
+		                    end)
   end
   test "dynamic record reference" do
     Erm.defrecord(:r1, [f1: 1, f2: 2, f3: 3])

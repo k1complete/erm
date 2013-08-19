@@ -21,7 +21,6 @@ defmodule Module1 do
     end
     defmodule M2 do
       use Erm
-      defrecord(:f, [a1: 1, a2: 2, a3: 3])
       m = list_to_atom(pid_to_list(self))
       assert(:ets.info(m)[:size] == 2)
       Enum.each :ets.tab2list(m),
@@ -33,8 +32,6 @@ defmodule Module1 do
       def m() do
 	      r = Erm.record(:a, [a1: 2])
         r2 = r
-        r3 = :"f".new
-        r3 = :"f"[]
         r4 = :"a"[]
         assert(elem(r4, 0) == :"a")
         assert(r4 == :"a"[])

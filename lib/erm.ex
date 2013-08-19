@@ -35,8 +35,8 @@ defmodule Erm do
 	pj = Path.wildcard(path)
     end
     filepaths = Enum.map(pj, fn(x) -> 
-				 binary_to_list(Path.dirname(x)) 
-			     end)
+				                         binary_to_list(Path.dirname(x)) 
+			                       end)
     :error_logger.info_msg("Erm: add include paths ~p~n", [filepaths])
     Enum.each(filepaths, fn(x) -> :code.add_patha(x) end)
   end
@@ -138,25 +138,28 @@ defmodule Erm do
 			               end)
     case (fields -- c) do
       [] -> 
-        :io.format("definition ~p ~p~n", [name, fields])
+        :io.format("!!!definition ~p ~p~n", [name, fields])
         true
       m ->
-	      msg = list_to_binary(:io_lib.format("duplicate field names ~p in record ~s~n", [m, name]))
+	      msg = String.from_char_list!(:io_lib.format("duplicate field names ~p in record ~s~n", [m, name]))
 	      raise ArgumentError, message: msg
     end
     true = :ets.insert(rs, rdef)
-    quote do
+    m = quote do
       defrecord(unquote(name),unquote(fields), [])
     end
+    IO.puts Macro.to_string(m)
+    m
   end
   @doc "record definition from file"
   @spec defrecords_from_file(String, String, Keyword.t) :: nil | File.Error
   def defrecords_from_file(file, paths, opt //[]) do
     pathlist = Enum.map(paths, binary_to_list(&1))
     ## Ifile, Path, Predef
-    try do
+   try do
       [filepath | _ ] = Path.wildcard(file)
-      {:ok, r} = :epp.parse_file binary_to_list(filepath), pathlist, opt
+      {:ok, fp} = String.to_char_list(filepath)
+      {:ok, r} = :epp.parse_file fp, pathlist, opt
       Enum.filter_map(r, fn
 			                     ({:attribute, _n, :record, _d}) ->
 			                       true
@@ -176,7 +179,6 @@ defmodule Erm do
 	      raise File.Error, reason: :enoent, action: "wildcard expand", 
 		                 path: file
     end
-    nil
   end
   @doc "all record defining from *.hrl"
   @spec defrecords_from_hrl(String) :: nil
@@ -197,7 +199,7 @@ defmodule Erm do
       {:error, :bad_name} ->
 	      raise ArgumentError, message: "Bad name #{libname}"
       m when(is_list(m)) -> 
-	      r = [list_to_binary(m) | rest]
+	      r = [String.from_char_list!(m) | rest]
 	      defrecords_from_file(Path.join(r), [], [])
     end
   end

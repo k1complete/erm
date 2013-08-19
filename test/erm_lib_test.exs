@@ -6,12 +6,17 @@ defmodule ErmLibTest do
     defmodule M1 do
       use Erm
       Erm.defrecords_from_lib("edoc/include/edoc_doclet.hrl")
+#      defrecord :"doclet_gen", (Record.extract :"doclet_gen",  from_lib: "edoc/include/edoc_doclet.hrl")
+ #     IEx.Helpers.m()
+#      defrecord :"context", dir: [], env: nil, opts: []
       def mes1() do
-	      r = Erm.record(:context)
-	      r
+#	      r = Erm.record(:context)
+	      r = :"doclet_toc"[]
+#      r = :"doclet_gen"[]
+#	      r = :"context"[]
       end
     end
-    assert(elem(M1.mes1, 0) == :context)
+    assert(elem(M1.mes1, 0) == :doclet_toc)
   end
   test "defrecords_from_lib_abort" do
     assert_raise(ArgumentError,
@@ -20,12 +25,13 @@ defmodule ErmLibTest do
 			       use Erm
 			       Erm.defrecords_from_lib("edoc_no_module/include/edoc_doclet.hrl")
 			       def mes1() do
-			         r = Erm.record(:context)
+			         r = :"context"[]
 			         r
 			       end
-			       assert(elem(M2.mes1, 0) == :context)
 		       end
+			     assert(elem(M2.mes1, 0) == :context)
 		   end)
   end
 end
+
 
