@@ -7,8 +7,8 @@ defmodule ErmLibTest do
       use Erm
       Erm.defrecords_from_lib("edoc/include/edoc_doclet.hrl")
       def mes1() do
-	r = Erm.record(:context)
-	r
+	      r = Erm.record(:context)
+	      r
       end
     end
     assert(elem(M1.mes1, 0) == :context)
@@ -17,13 +17,13 @@ defmodule ErmLibTest do
     assert_raise(ArgumentError,
 		   fn() ->
 		       defmodule M2 do
-			 use Erm
-			 Erm.defrecords_from_lib("edoc_no_module/include/edoc_doclet.hrl")
-			 def mes1() do
-			   r = Erm.record(:context)
-			   r
-			 end
-			 assert(elem(M2.mes1, 0) == :context)
+			       use Erm
+			       Erm.defrecords_from_lib("edoc_no_module/include/edoc_doclet.hrl")
+			       def mes1() do
+			         r = Erm.record(:context)
+			         r
+			       end
+			       assert(elem(M2.mes1, 0) == :context)
 		       end
 		   end)
   end

@@ -9,7 +9,7 @@ defmodule Module1 do
       Erm.defrecord(:a, [a1: 1, a2: 2])
       Erm.defrecord(:b, [a1: 1, a2: 2])
       def mm() do
-	Erm.record(:a, [a1: 2])
+	      Erm.record(:a, [a1: 2])
       end
       assert(__MODULE__ == Module1.M1)
       m = list_to_atom(pid_to_list(self))
@@ -21,23 +21,32 @@ defmodule Module1 do
     end
     defmodule M2 do
       use Erm
+      defrecord(:f, [a1: 1, a2: 2, a3: 3])
       m = list_to_atom(pid_to_list(self))
-      assert(:ets.info(m)[:size] == 1)
+      assert(:ets.info(m)[:size] == 2)
       Enum.each :ets.tab2list(m),
 		       fn(t) ->
-			   :io.format("~p~n", [t])
+			         :io.format("~p~n", [t])
 		       end
-      Erm.defrecord(:a, [a1: 1, a2: 2, a3: 3])
+      Erm.defrecord(:"b", [a1: 1, a2: 2, a3: 3, a4: 4])
+      Erm.defrecord(:a, [a1: 1, a2: 2, a3: 3, a4: :"b"[]])
       def m() do
-	Erm.record(:a, [a1: 2])
+	      r = Erm.record(:a, [a1: 2])
+        r2 = r
+        r3 = :"f".new
+        r3 = :"f"[]
+        r4 = :"a"[]
+        assert(elem(r4, 0) == :"a")
+        assert(r4 == :"a"[])
+        IO.puts "#{inspect r4, raw: true}"
       end
     end
-
+    M2.m()
     assert_raise(MatchError,
 		   fn() ->
 		       defmodule M3 do
-			 use Erm
-			 Erm.record(:b, [a2: 1])
+			       use Erm
+			       Erm.record(:b, [a2: 1])
 		       end
 		   end)
     end

@@ -115,14 +115,15 @@ defmodule Erm do
     nil
   end
   defp reduce_fields(rs, defs) do
-    m = Enum.map(defs, function do
-			 ({:record_field, _n, name_t}) ->
-			   {:atom, _m, name} = name_t
-			   {name, :undefined}
-			 ({:record_field, _n, name_t, value_t}) ->
-			   {:atom, _m, name} = name_t
-			   {name, conv(rs, value_t)}
-		       end)
+    m = Enum.map(defs, 
+                   fn
+			               ({:record_field, _n, name_t}) ->
+			                 {:atom, _m, name} = name_t
+			                 {name, :undefined}
+			               ({:record_field, _n, name_t, value_t}) ->
+			                 {:atom, _m, name} = name_t
+			                 {name, conv(rs, value_t)}
+		               end)
     m
   end
   defp record_definition(rs, rdef) do
@@ -131,16 +132,22 @@ defmodule Erm do
       _ -> true
     end
     {name, fields} = rdef
-    c = List.foldl(fields, [], fn({k, v}, a) -> 
-				   Keyword.put(a, k, v) 
-			       end)
+    c = List.foldl(fields, [], 
+                     fn({k, v}, a) -> 
+				                 Keyword.put(a, k, v) 
+			               end)
     case (fields -- c) do
-      [] -> true
+      [] -> 
+        :io.format("definition ~p ~p~n", [name, fields])
+        true
       m ->
-	msg = list_to_binary(:io_lib.format("duplicate field names ~p in record ~s~n", [m, name]))
-	raise ArgumentError, message: msg
+	      msg = list_to_binary(:io_lib.format("duplicate field names ~p in record ~s~n", [m, name]))
+	      raise ArgumentError, message: msg
     end
     true = :ets.insert(rs, rdef)
+    quote do
+      defrecord(unquote(name),unquote(fields), [])
+    end
   end
   @doc "record definition from file"
   @spec defrecords_from_file(String, String, Keyword.t) :: nil | File.Error
@@ -150,25 +157,24 @@ defmodule Erm do
     try do
       [filepath | _ ] = Path.wildcard(file)
       {:ok, r} = :epp.parse_file binary_to_list(filepath), pathlist, opt
-      Enum.filter_map(r, function do
-			 ({:attribute, _n, :record, _d}) ->
-			   true
-			 ({:error, {_n, :epp, {path}}}) ->
-			   raise File.Error, reason: :enoent, 
-					action: " maybe not search path", 
-					path: path
-			 (_) -> 
-			   false
-		       end,
-		      function do
-			({_a, _n, :record, {name, defs}}) ->
-			  m = reduce_fields(pid(), defs)
-			  record_definition(pid(), {name, m})
-		      end)
-    rescue
-      MatchError -> 
-	raise File.Error, reason: :enoent, action: "wildcard expand", 
-		     path: file
+      Enum.filter_map(r, fn
+			                     ({:attribute, _n, :record, _d}) ->
+			                       true
+			                     ({:error, {_n, :epp, {path}}}) ->
+			                       raise File.Error, reason: :enoent, 
+					                                action: " maybe not search path", 
+					                                  path: path
+			                     (_) -> 
+			                       false
+		                    end,
+		                    fn ({_a, _n, :record, {name, defs}}) ->
+			                       m = reduce_fields(pid(), defs)
+			                       record_definition(pid(), {name, m})
+		                    end)
+      rescue
+        MatchError -> 
+	      raise File.Error, reason: :enoent, action: "wildcard expand", 
+		                 path: file
     end
     nil
   end
@@ -189,10 +195,10 @@ defmodule Erm do
     [libname | rest] = Path.split(file)
     case :code.lib_dir(binary_to_atom(libname)) do
       {:error, :bad_name} ->
-	raise ArgumentError, message: "Bad name #{libname}"
+	      raise ArgumentError, message: "Bad name #{libname}"
       m when(is_list(m)) -> 
-	r = [list_to_binary(m) | rest]
-	defrecords_from_file(Path.join(r), [], [])
+	      r = [list_to_binary(m) | rest]
+	      defrecords_from_file(Path.join(r), [], [])
     end
   end
 
