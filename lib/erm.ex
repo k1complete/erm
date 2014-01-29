@@ -1,7 +1,7 @@
 defmodule Erm do
   @moduledoc "Erlang like Record Manipulater module"
   defp pid do
-    list_to_atom(pid_to_list(self))
+    list_to_atom(:erlang.pid_to_list(self))
   end
   defmacro __using__(_opts) do
     r = :ets.info(pid())
@@ -35,7 +35,7 @@ defmodule Erm do
 	pj = Path.wildcard(path)
     end
     filepaths = Enum.map(pj, fn(x) -> 
-				                         binary_to_list(Path.dirname(x)) 
+				                         :erlang.binary_to_list(Path.dirname(x))
 			                       end)
     :error_logger.info_msg("Erm: add include paths ~p~n", [filepaths])
     Enum.each(filepaths, fn(x) -> :code.add_patha(x) end)
@@ -74,7 +74,7 @@ defmodule Erm do
   defp conv(_rs, {:integer, _n, v}), do: v
   defp conv(rs, {:bin, _n, v}) do
     r = lc {:bin_element, _, tv, _d1, _d2} inlist v, do: conv(rs, tv)
-    list_to_binary(r)
+    :erlang.list_to_binary(r)
   end
   defp conv(_rs, {:nil, _n}), do: []
   defp conv(_rs, {:atom, _n, a}), do: a
@@ -138,7 +138,7 @@ defmodule Erm do
   @doc "record definition from file"
   @spec defrecords_from_file(String, String, Keyword.t) :: nil | File.Error
   def defrecords_from_file(file, paths, opt //[]) do
-    pathlist = Enum.map(paths, binary_to_list(&1))
+    pathlist = Enum.map(paths, fn(p) -> :erlang.binary_to_list(p) end)
     ## Ifile, Path, Predef
    try do
       [filepath | _ ] = Path.wildcard(file)
